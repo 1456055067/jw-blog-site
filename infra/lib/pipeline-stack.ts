@@ -7,8 +7,18 @@ export interface PipelineStackProps extends StackProps {
   readonly githubOwner: string;
   /** Repository name, e.g. "jw-blog-site". */
   readonly githubRepo: string;
-  /** Branches the role may be assumed from. Default: ["main"]. */
+  /**
+   * Branches the role may be assumed from when the workflow does NOT use
+   * `environment:`. Default: ["main"].
+   */
   readonly allowedBranches?: string[];
+  /**
+   * Environments the role may be assumed from when the workflow uses
+   * `environment:`. GitHub changes the OIDC `sub` claim shape when an
+   * environment is set, so both forms must be allowlisted independently.
+   * Default: ["production"].
+   */
+  readonly allowedEnvironments?: string[];
 }
 
 /**
@@ -34,6 +44,7 @@ export class PipelineStack extends Stack {
     super(scope, id, props);
 
     const branches = props.allowedBranches ?? ["main"];
+    const environments = props.allowedEnvironments ?? ["production"];
 
     const oidcProvider = new iam.OpenIdConnectProvider(
       this,
@@ -44,9 +55,15 @@ export class PipelineStack extends Stack {
       }
     );
 
-    const subjectClaims = branches.map(
-      (b) => `repo:${props.githubOwner}/${props.githubRepo}:ref:refs/heads/${b}`
-    );
+    const subjectClaims = [
+      ...branches.map(
+        (b) =>
+          `repo:${props.githubOwner}/${props.githubRepo}:ref:refs/heads/${b}`
+      ),
+      ...environments.map(
+        (e) => `repo:${props.githubOwner}/${props.githubRepo}:environment:${e}`
+      ),
+    ];
 
     const role = new iam.Role(this, "GitHubActionsDeployRole", {
       roleName: `gh-actions-${props.githubRepo}-deploy`,
