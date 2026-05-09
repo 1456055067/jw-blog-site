@@ -12,7 +12,8 @@ const out = resolve(__dirname, "..", "public", "og-default.png");
 
 const TITLE_LINE_1 = "Software,";
 const TITLE_LINE_2 = "written down.";
-const SUBTITLE = "Notes on building, breaking, and shipping software.";
+const SUBTITLE =
+  "Notes on building, breaking, and shipping tooling for enterprise, tactical and datacenter networks. Distinguished Engineer @ United States Air Force.";
 const KICKER = "FIELD NOTES";
 const HANDLE = "johnewillmanv.com";
 

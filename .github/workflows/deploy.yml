@@ -1,0 +1,85 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "scripts/**"
+      - "astro.config.mjs"
+      - "postcss.config.mjs"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - "infra/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {}
+
+# OIDC token + repo checkout
+permissions:
+  id-token: write
+  contents: read
+
+# Don't cancel an in-flight deploy when a new commit lands; let the running
+# deploy finish, the next push will deploy on top.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            infra/package-lock.json
+
+      - name: Install site deps
+        run: npm ci
+
+      - name: Install infra deps
+        working-directory: infra
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+        env:
+          PUBLIC_GISCUS_REPO: ${{ vars.PUBLIC_GISCUS_REPO }}
+          PUBLIC_GISCUS_REPO_ID: ${{ vars.PUBLIC_GISCUS_REPO_ID }}
+          PUBLIC_GISCUS_CATEGORY: ${{ vars.PUBLIC_GISCUS_CATEGORY }}
+          PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.PUBLIC_GISCUS_CATEGORY_ID }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: gh-actions-${{ github.run_id }}
+
+      - name: CDK diff (informational)
+        working-directory: infra
+        run: npx cdk diff JwBlogSiteStack || true
+        env:
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
+          HOSTED_ZONE_NAME: ${{ vars.HOSTED_ZONE_NAME }}
+          EXISTING_CERTIFICATE_ARN: ${{ vars.EXISTING_CERTIFICATE_ARN }}
+
+      - name: CDK deploy
+        working-directory: infra
+        run: npx cdk deploy JwBlogSiteStack --require-approval never
+        env:
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
+          HOSTED_ZONE_NAME: ${{ vars.HOSTED_ZONE_NAME }}
+          EXISTING_CERTIFICATE_ARN: ${{ vars.EXISTING_CERTIFICATE_ARN }}

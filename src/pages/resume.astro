@@ -1,0 +1,45 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { AUTHOR } from "~/consts";
+---
+
+<BaseLayout title="Resume">
+  <section class="mx-auto max-w-3xl px-6 pt-20 pb-16">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap">
+      <h1 class="text-4xl font-semibold tracking-tight">Resume</h1>
+      <a
+        href={`mailto:${AUTHOR.email}`}
+        class="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors"
+      >
+        {AUTHOR.email}
+      </a>
+    </div>
+
+    <div
+      class="prose dark:prose-invert prose-lg mt-8 max-w-none text-[var(--color-fg)]"
+    >
+      <h2>Summary</h2>
+      <p>
+        Short paragraph about what you do and what you're looking for.
+      </p>
+
+      <h2>Experience</h2>
+      <h3>Role — Company</h3>
+      <p class="text-[var(--color-fg-muted)]">Start – End</p>
+      <ul>
+        <li>Impact-oriented bullet describing what you shipped and the outcome.</li>
+        <li>Another bullet, ideally with a number attached.</li>
+      </ul>
+
+      <h2>Education</h2>
+      <h3>Degree — Institution</h3>
+      <p class="text-[var(--color-fg-muted)]">Year</p>
+
+      <h2>Links</h2>
+      <ul>
+        <li><a href={AUTHOR.social.github}>GitHub</a></li>
+        <li><a href={AUTHOR.social.linkedin}>LinkedIn</a></li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

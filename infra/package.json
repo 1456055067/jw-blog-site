@@ -9,9 +9,10 @@
     "build": "tsc",
     "watch": "tsc -w",
     "synth": "cdk synth",
-    "diff": "cdk diff",
-    "deploy": "cdk deploy --require-approval never",
-    "destroy": "cdk destroy"
+    "diff": "cdk diff JwBlogSiteStack",
+    "deploy": "cdk deploy JwBlogSiteStack --require-approval never",
+    "deploy:pipeline": "cdk deploy JwBlogPipelineStack --require-approval never",
+    "destroy": "cdk destroy JwBlogSiteStack"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

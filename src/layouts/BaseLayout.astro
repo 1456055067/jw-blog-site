@@ -62,8 +62,7 @@ const ogImageUrl = new URL(ogImage, Astro.site).toString();
     <script is:inline>
       (() => {
         const stored = localStorage.getItem("theme");
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const dark = stored ? stored === "dark" : prefersDark;
+        const dark = stored ? stored === "dark" : true;
         document.documentElement.classList.toggle("dark", dark);
       })();
     </script>

@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from "node:path";
 import {
   Stack,
   StackProps,
@@ -21,13 +21,21 @@ export interface BlogStackProps extends StackProps {
   readonly domainName?: string;
   readonly hostedZoneId?: string;
   readonly hostedZoneName?: string;
+  /**
+   * If provided, CloudFront uses this existing ACM cert ARN instead of
+   * having CDK create one. Useful when the deployer's IAM principal lacks
+   * route53:ChangeResourceRecordSets and CFN's auto-validation can't write
+   * the DNS challenge. Cert must be in us-east-1.
+   */
+  readonly existingCertificateArn?: string;
 }
 
 export class BlogStack extends Stack {
   constructor(scope: Construct, id: string, props: BlogStackProps = {}) {
     super(scope, id, props);
 
-    const { domainName, hostedZoneId, hostedZoneName } = props;
+    const { domainName, hostedZoneId, hostedZoneName, existingCertificateArn } =
+      props;
 
     // Access-logs bucket. Holds CloudFront standard logs under "cloudfront/"
     // and S3 server access logs from the site bucket under "s3-site/".
@@ -69,11 +77,24 @@ export class BlogStack extends Stack {
         hostedZoneId,
         zoneName: hostedZoneName,
       });
-      certificate = new acm.Certificate(this, "Certificate", {
-        domainName,
-        subjectAlternativeNames: [`www.${domainName}`],
-        validation: acm.CertificateValidation.fromDns(zone),
-      });
+      if (existingCertificateArn) {
+        // Import a pre-issued cert. Use this when the local deployer's IAM
+        // principal can't write Route 53 validation records (CFN's
+        // auto-validation silently no-ops, leaving the cert PENDING and
+        // CloudFront rejecting it as "invalid").
+        certificate = acm.Certificate.fromCertificateArn(
+          this,
+          "Certificate",
+          existingCertificateArn
+        );
+      } else {
+        certificate = new acm.Certificate(this, "Certificate", {
+          domainName,
+          subjectAlternativeNames: [`www.${domainName}`],
+          validation: acm.CertificateValidation.fromDns(zone),
+          keyAlgorithm: acm.KeyAlgorithm.EC_SECP384R1,
+        });
+      }
     }
 
     // WAF (CLOUDFRONT scope — this stack must be in us-east-1).
