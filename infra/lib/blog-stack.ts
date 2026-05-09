@@ -78,21 +78,27 @@ export class BlogStack extends Stack {
         zoneName: hostedZoneName,
       });
       if (existingCertificateArn) {
-        // Import a pre-issued cert. Use this when the local deployer's IAM
-        // principal can't write Route 53 validation records (CFN's
-        // auto-validation silently no-ops, leaving the cert PENDING and
-        // CloudFront rejecting it as "invalid").
+        // Import a pre-issued cert (skips creation entirely).
         certificate = acm.Certificate.fromCertificateArn(
           this,
           "Certificate",
           existingCertificateArn
         );
       } else {
-        certificate = new acm.Certificate(this, "Certificate", {
+        // DnsValidatedCertificate is officially deprecated but it's the only
+        // CDK construct that *correctly waits* for the cert to reach ISSUED
+        // before signalling CFN. The native acm.Certificate has a CFN race
+        // (https://github.com/aws/aws-cdk/issues/8401) where the resource
+        // gets marked COMPLETE while still PENDING_VALIDATION, causing
+        // CloudFront to reject it as "specified SSL certificate doesn't
+        // exist...". Trade-off: this construct doesn't support keyAlgorithm,
+        // so cert is RSA-2048 only. Switch back to acm.Certificate when the
+        // upstream CFN race is fixed.
+        certificate = new acm.DnsValidatedCertificate(this, "Certificate", {
           domainName,
           subjectAlternativeNames: [`www.${domainName}`],
-          validation: acm.CertificateValidation.fromDns(zone),
-          keyAlgorithm: acm.KeyAlgorithm.EC_SECP384R1,
+          hostedZone: zone,
+          region: "us-east-1",
         });
       }
     }
