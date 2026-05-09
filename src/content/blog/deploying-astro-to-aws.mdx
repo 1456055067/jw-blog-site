@@ -1,0 +1,51 @@
+---
+title: "Deploying a static Astro site to AWS the boring way"
+description: "S3 + CloudFront with CDK — cheap, fast, and the parts you actually need to know."
+pubDate: 2026-05-09
+tags: ["aws", "astro", "cdk"]
+draft: false
+---
+
+There are a dozen ways to host a static site on AWS. Most of them are fine.
+The combination I keep coming back to is **S3 + CloudFront, provisioned with
+CDK**. I remeber using CDK a lot when I worked at AWS, it just simplifies things for myself.
+Someone might ask why not Terraform or another tool. I most use AWS services so I dont have the
+need for multi-cloud orcestration at the moment. Anyways the architecture costs roughly nothing at low traffic,
+terminates TLS at the edge, and you don't have to think about it once it's up.
+
+## The shape of it
+
+Three moving parts:
+
+1. A **private S3 bucket** holding the built static files.
+2. A **CloudFront distribution** in front of the bucket, locked down with an
+   Origin Access Control so the bucket never goes public.
+3. A **bucket deployment** that uploads `dist/` and invalidates the CDN cache.
+
+That's it. No Lambda, no API Gateway, no Amplify abstractions to debug.
+
+## Why not Amplify Hosting?
+
+Amplify is a perfectly good managed service. The trade-off is opacity: when
+something misbehaves you're chasing it through a console rather than reading
+your own CDK stack. For a blog, the explicit version is simpler in the long run.
+
+## Cost notes
+
+At blog-scale traffic this lives comfortably in the AWS free tier and well
+below a few dollars a month after that. The two things to watch:
+
+- **CloudFront request pricing** — negligible until you start serving real
+  volume.
+- **Cache invalidations** — the first 1,000 paths/month are free; if you
+  invalidate `/*` on every deploy you're using one path per deploy, so this is
+  effectively a non-issue.
+
+## Custom domain in one extra step
+
+Bring an ACM certificate in `us-east-1` (CloudFront's required region), point
+your Route 53 hosted zone at the distribution with an alias record, and you're
+done. The CDK stack here takes both as optional context — set them when you're
+ready.
+
+It would be interesting to hear how others might approach a deployment. Feel free to drop a note.

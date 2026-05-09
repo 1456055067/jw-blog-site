@@ -1,0 +1,49 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "~/layouts/BaseLayout.astro";
+
+const posts = await getCollection("blog", ({ data }) => !data.draft);
+
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+
+const tags = [...tagCounts.entries()].sort(
+  (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+);
+---
+
+<BaseLayout
+  title="Tags"
+  description={`All tags across ${posts.length} posts.`}
+>
+  <section class="mx-auto max-w-3xl px-6 pt-20 pb-10">
+    <h1 class="text-4xl font-semibold tracking-tight">Tags</h1>
+    <p class="mt-3 text-[var(--color-fg-muted)]">
+      {tags.length}
+      {tags.length === 1 ? "tag" : "tags"} across {posts.length}
+      {posts.length === 1 ? "post" : "posts"}.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-6 pb-20 flex flex-wrap gap-2">
+    {
+      tags.length === 0 ? (
+        <p class="text-[var(--color-fg-muted)]">No tags yet.</p>
+      ) : (
+        tags.map(([tag, count]) => (
+          <a
+            href={`/tags/${encodeURIComponent(tag)}/`}
+            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[var(--color-border)] text-sm hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors"
+          >
+            <span class="font-mono">#{tag}</span>
+            <span class="text-[var(--color-fg-muted)] text-xs">{count}</span>
+          </a>
+        ))
+      )
+    }
+  </section>
+</BaseLayout>

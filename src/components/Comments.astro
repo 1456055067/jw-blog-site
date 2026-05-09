@@ -1,0 +1,74 @@
+---
+// Giscus comments — backed by GitHub Discussions.
+// Configure by setting the PUBLIC_GISCUS_* env vars (see .env.example).
+// Get the values from https://giscus.app after enabling Discussions on the repo
+// and installing the giscus GitHub App.
+
+const repo = import.meta.env.PUBLIC_GISCUS_REPO;
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID;
+const category = import.meta.env.PUBLIC_GISCUS_CATEGORY;
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID;
+
+const configured = Boolean(repo && repoId && category && categoryId);
+const showDevHint = !configured && import.meta.env.DEV;
+---
+
+{
+  configured && (
+    <section class="mt-16 pt-8 border-t border-[var(--color-border)]">
+      <h2 class="text-sm font-mono text-[var(--color-fg-muted)] uppercase tracking-widest mb-6">
+        Comments
+      </h2>
+      <div class="giscus" />
+      <script
+        is:inline
+        src="https://giscus.app/client.js"
+        data-repo={repo}
+        data-repo-id={repoId}
+        data-category={category}
+        data-category-id={categoryId}
+        data-mapping="pathname"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme="preferred_color_scheme"
+        data-lang="en"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async
+      />
+      <script is:inline>
+        {`(() => {
+          const themeFor = (isDark) => isDark ? "dark_dimmed" : "light";
+          const send = () => {
+            const iframe = document.querySelector("iframe.giscus-frame");
+            if (!iframe || !iframe.contentWindow) return;
+            iframe.contentWindow.postMessage(
+              { giscus: { setConfig: { theme: themeFor(document.documentElement.classList.contains("dark")) } } },
+              "https://giscus.app"
+            );
+          };
+          new MutationObserver(send).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+          });
+          window.addEventListener("message", (e) => {
+            if (e.origin === "https://giscus.app" && e.data && e.data.giscus) send();
+          });
+        })();`}
+      </script>
+    </section>
+  )
+}
+
+{
+  showDevHint && (
+    <section class="mt-16 pt-8 border-t border-[var(--color-border)]">
+      <p class="text-sm text-[var(--color-fg-muted)]">
+        Giscus comments are not configured yet. See <code>.env.example</code>{" "}
+        and the README for setup steps. (This hint only shows in dev.)
+      </p>
+    </section>
+  )
+}

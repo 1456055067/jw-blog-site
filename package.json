@@ -1,0 +1,30 @@
+{
+  "name": "jw-blog-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "deploy": "npm run build && npm --prefix infra run deploy",
+    "infra:diff": "npm --prefix infra run diff",
+    "infra:synth": "npm --prefix infra run synth",
+    "og:generate": "node scripts/generate-og.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/rss": "^4.0.18",
+    "@astrojs/sitemap": "^3.7.2",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/typography": "^0.5.15",
+    "astro": "6.3.1",
+    "reading-time": "^1.5.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

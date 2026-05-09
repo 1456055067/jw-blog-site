@@ -1,0 +1,39 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="404 — page not found"
+  description="The page you were looking for doesn't exist."
+>
+  <section
+    class="mx-auto max-w-3xl px-6 pt-32 pb-20 flex flex-col items-start gap-6"
+  >
+    <p
+      class="font-mono text-xs uppercase tracking-widest text-[var(--color-accent)]"
+    >
+      404
+    </p>
+    <h1 class="text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05]">
+      That page wandered off.
+    </h1>
+    <p class="text-lg text-[var(--color-fg-muted)] leading-relaxed max-w-2xl">
+      The URL you followed doesn't exist, or it used to and the post moved.
+      Either way, here are some better directions.
+    </p>
+    <div class="flex flex-wrap gap-3 mt-2">
+      <a
+        href="/"
+        class="px-4 py-2 rounded-md bg-[var(--color-accent)] text-[var(--color-accent-fg)] text-sm font-medium hover:opacity-90 transition-opacity"
+      >
+        Home
+      </a>
+      <a
+        href="/blog"
+        class="px-4 py-2 rounded-md border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-bg-elevated)] transition-colors"
+      >
+        All posts
+      </a>
+    </div>
+  </section>
+</BaseLayout>

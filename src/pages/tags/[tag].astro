@@ -1,0 +1,54 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import PostCard from "~/components/PostCard.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }) => !data.draft);
+  const byTag = new Map<string, CollectionEntry<"blog">[]>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      const list = byTag.get(tag) ?? [];
+      list.push(post);
+      byTag.set(tag, list);
+    }
+  }
+  return [...byTag.entries()].map(([tag, postsForTag]) => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: postsForTag.sort(
+        (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime()
+      ),
+    },
+  }));
+}
+
+const { tag, posts } = Astro.props;
+---
+
+<BaseLayout title={`#${tag}`} description={`Posts tagged ${tag}.`}>
+  <section class="mx-auto max-w-3xl px-6 pt-20 pb-10">
+    <p
+      class="font-mono text-xs uppercase tracking-widest text-[var(--color-accent)] mb-4"
+    >
+      Tag
+    </p>
+    <h1 class="text-4xl font-semibold tracking-tight">#{tag}</h1>
+    <p class="mt-3 text-[var(--color-fg-muted)]">
+      {posts.length}
+      {posts.length === 1 ? "post" : "posts"}
+      <span class="opacity-50 mx-2">·</span>
+      <a
+        href="/tags"
+        class="font-mono hover:text-[var(--color-accent)] transition-colors"
+      >
+        all tags →
+      </a>
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-6 pb-20">
+    {posts.map((post) => <PostCard post={post} />)}
+  </section>
+</BaseLayout>

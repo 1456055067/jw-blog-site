@@ -1,0 +1,57 @@
+---
+import FormattedDate from "~/components/FormattedDate.astro";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const { title, description, pubDate, tags } = post.data;
+---
+
+<article
+  class="group relative py-6 border-b border-[var(--color-border)] last:border-b-0"
+>
+  <div
+    class="flex items-center gap-3 text-xs text-[var(--color-fg-muted)] font-mono mb-2"
+  >
+    <FormattedDate date={pubDate} />
+    {
+      tags.length > 0 && (
+        <>
+          <span class="opacity-50">·</span>
+          <span class="flex gap-2">
+            {tags.map((t) => (
+              <a
+                href={`/tags/${encodeURIComponent(t)}/`}
+                class="relative z-10 hover:text-[var(--color-accent)] transition-colors"
+              >
+                #{t}
+              </a>
+            ))}
+          </span>
+        </>
+      )
+    }
+  </div>
+
+  <h2 class="text-xl font-semibold tracking-tight">
+    <a
+      href={`/blog/${post.id}/`}
+      class="before:content-[''] before:absolute before:inset-0 group-hover:text-[var(--color-accent)] transition-colors"
+    >
+      {title}
+    </a>
+  </h2>
+
+  <p class="text-[var(--color-fg-muted)] leading-relaxed mt-2">
+    {description}
+  </p>
+
+  <span
+    class="inline-block text-sm font-mono text-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity mt-2"
+  >
+    Read →
+  </span>
+</article>

@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+
+  --color-bg: oklch(0.99 0 0);
+  --color-bg-elevated: oklch(1 0 0);
+  --color-fg: oklch(0.18 0.01 260);
+  --color-fg-muted: oklch(0.45 0.015 260);
+  --color-border: oklch(0.92 0.005 260);
+  --color-accent: oklch(0.62 0.16 165);
+  --color-accent-fg: oklch(0.98 0 0);
+}
+
+.dark {
+  --color-bg: oklch(0.16 0.01 260);
+  --color-bg-elevated: oklch(0.21 0.012 260);
+  --color-fg: oklch(0.96 0 0);
+  --color-fg-muted: oklch(0.7 0.015 260);
+  --color-border: oklch(0.28 0.012 260);
+  --color-accent: oklch(0.78 0.17 165);
+  --color-accent-fg: oklch(0.16 0.01 260);
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+body {
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+/* Smooth scroll for in-page anchors */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Shiki light/dark theme switching driven by .dark on <html> */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+html.dark .astro-code,
+html.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+/* Refined prose tweaks (works on top of @tailwindcss/typography) */
+.prose {
+  --tw-prose-body: var(--color-fg);
+  --tw-prose-headings: var(--color-fg);
+  --tw-prose-links: var(--color-accent);
+  --tw-prose-bold: var(--color-fg);
+  --tw-prose-counters: var(--color-fg-muted);
+  --tw-prose-bullets: var(--color-border);
+  --tw-prose-hr: var(--color-border);
+  --tw-prose-quotes: var(--color-fg);
+  --tw-prose-quote-borders: var(--color-accent);
+  --tw-prose-captions: var(--color-fg-muted);
+  --tw-prose-code: var(--color-fg);
+  --tw-prose-pre-code: inherit;
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-th-borders: var(--color-border);
+  --tw-prose-td-borders: var(--color-border);
+}
+
+.prose :where(pre):not(:where([class~="not-prose"] *)) {
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.prose :where(code):not(:where([class~="not-prose"] *))::before,
+.prose :where(code):not(:where([class~="not-prose"] *))::after {
+  content: none;
+}
+
+.prose :where(:not(pre) > code):not(:where([class~="not-prose"] *)) {
+  background-color: color-mix(in oklch, var(--color-fg) 8%, transparent);
+  padding: 0.15em 0.4em;
+  border-radius: 0.35em;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.prose :where(a):not(:where([class~="not-prose"] *)) {
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in oklch, var(--color-accent) 50%, transparent);
+  transition: border-color 150ms ease;
+}
+.prose :where(a):hover:not(:where([class~="not-prose"] *)) {
+  border-bottom-color: var(--color-accent);
+}

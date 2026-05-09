@@ -1,0 +1,33 @@
+---
+title: "Hello, world"
+description: "A first post — what this blog is for and what to expect."
+pubDate: 2026-05-09
+tags: ["meta"]
+draft: false
+---
+
+Welcome. This is the first post on a small corner of the internet for notes on
+building software tooling for datacenter network engineering — the kind of writing I'd want to read myself: short,
+specific, and rooted in something that actually shipped. You will find I love to use em dashs.
+
+## What you can expect
+
+- **Postmortems and patterns** from real systems, not toy examples.
+- **AWS-flavored** cloud architecture, with an eye toward cost and operability.
+- **Deep dives** on the tools I rely on day-to-day, and the ones I'm trying out.
+
+## A quick stack tour
+
+This site itself is built with [Astro](https://astro.build) and deployed to AWS
+via [CDK](https://aws.amazon.com/cdk/). Posts are MDX files in the repo, which
+means I can drop a chart or interactive demo directly into prose:
+
+```ts
+// astro.config.mjs
+export default defineConfig({
+  site: "https://johnewillmanv.com",
+  integrations: [mdx(), sitemap()],
+});
+```
+
+If you find something useful, broken, or wrong — please reach out. More to come.

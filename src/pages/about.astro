@@ -1,0 +1,27 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { AUTHOR } from "~/consts";
+---
+
+<BaseLayout title="About">
+  <section class="mx-auto max-w-3xl px-6 pt-20 pb-16">
+    <h1 class="text-4xl font-semibold tracking-tight">About</h1>
+    <div
+      class="prose dark:prose-invert prose-lg mt-8 max-w-none text-[var(--color-fg)]"
+    >
+      <p>
+        Hi, I'm {AUTHOR.name}. I write about the things I build and the things
+        that break — mostly cloud architecture, distributed systems, and the
+        unglamorous bits of software that hold real systems together.
+      </p>
+      <p>
+        This site is an attempt to think out loud, write more carefully, and
+        leave behind notes I'd want to find later.
+      </p>
+      <p>
+        The best way to reach me is at{" "}
+        <a href={`mailto:${AUTHOR.email}`}>{AUTHOR.email}</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
