@@ -281,7 +281,7 @@ export class BlogStack extends Stack {
       certificate,
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
-      minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+      minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_3_2025,
       logBucket: logsBucket,
       logFilePrefix: "cloudfront/",
       logIncludesCookies: false,
