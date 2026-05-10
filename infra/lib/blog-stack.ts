@@ -15,6 +15,7 @@ import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as targets from "aws-cdk-lib/aws-route53-targets";
 import * as wafv2 from "aws-cdk-lib/aws-wafv2";
+import { CertIssuedWaiter } from "./cert-issued-waiter";
 
 export interface BlogStackProps extends StackProps {
   /** e.g. "johnewillmanv.com". When set with hostedZoneId/Name, attaches a custom domain. */
@@ -71,6 +72,7 @@ export class BlogStack extends Stack {
     // Optional: custom domain wiring
     let certificate: acm.ICertificate | undefined;
     let zone: route53.IHostedZone | undefined;
+    let certWaiter: CertIssuedWaiter | undefined;
 
     if (domainName && hostedZoneId && hostedZoneName) {
       zone = route53.HostedZone.fromHostedZoneAttributes(this, "Zone", {
@@ -78,28 +80,34 @@ export class BlogStack extends Stack {
         zoneName: hostedZoneName,
       });
       if (existingCertificateArn) {
-        // Import a pre-issued cert (skips creation entirely).
+        // Import a pre-issued cert (skips creation entirely; cert is assumed
+        // already ISSUED so no waiter needed).
         certificate = acm.Certificate.fromCertificateArn(
           this,
           "Certificate",
           existingCertificateArn
         );
       } else {
-        // DnsValidatedCertificate is officially deprecated but it's the only
-        // CDK construct that *correctly waits* for the cert to reach ISSUED
-        // before signalling CFN. The native acm.Certificate has a CFN race
-        // (https://github.com/aws/aws-cdk/issues/8401) where the resource
-        // gets marked COMPLETE while still PENDING_VALIDATION, causing
-        // CloudFront to reject it as "specified SSL certificate doesn't
-        // exist...". Trade-off: this construct doesn't support keyAlgorithm,
-        // so cert is RSA-2048 only. Switch back to acm.Certificate when the
-        // upstream CFN race is fixed.
-        certificate = new acm.DnsValidatedCertificate(this, "Certificate", {
+        // Native acm.Certificate (supports keyAlgorithm) + custom waiter
+        // construct that polls ACM until status=ISSUED. The native CFN
+        // resource has a known race (aws-cdk#8401) where it marks itself
+        // COMPLETE while still PENDING_VALIDATION; without the waiter,
+        // CloudFront rejects the still-pending cert with a misleading
+        // "doesn't exist" error. CloudFront's distribution.node.addDependency
+        // on the waiter blocks the attach until validation truly completes.
+        //
+        // Using P-256 (not P-384) — CloudFront in this account rejects
+        // ECDSA P-384 despite docs claiming support; P-256 works fine.
+        const cert = new acm.Certificate(this, "Certificate", {
           domainName,
           subjectAlternativeNames: [`www.${domainName}`],
-          hostedZone: zone,
-          region: "us-east-1",
+          validation: acm.CertificateValidation.fromDns(zone),
+          keyAlgorithm: acm.KeyAlgorithm.EC_PRIME256V1,
         });
+        certWaiter = new CertIssuedWaiter(this, "CertWaiter", {
+          certificateArn: cert.certificateArn,
+        });
+        certificate = cert;
       }
     }
 
@@ -287,6 +295,14 @@ export class BlogStack extends Stack {
       logIncludesCookies: false,
       webAclId: webAcl.attrArn,
     });
+
+    // Block CloudFront's create/update on the cert actually being ISSUED, not
+    // just CFN's premature COMPLETE on the cert resource. No-op when the cert
+    // was imported (existingCertificateArn) since imported certs are already
+    // ISSUED.
+    if (certWaiter) {
+      distribution.node.addDependency(certWaiter);
+    }
 
     // CloudFront Function: rewrite "/path/" -> "/path/index.html" so directory
     // URLs resolve to Astro's generated index files.
