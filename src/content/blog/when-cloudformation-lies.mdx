@@ -1,0 +1,59 @@
+---
+title: "When CloudFormation lies"
+description: "ACM certs that say they're done before they actually are, and a CDK construct to make CFN tell the truth."
+pubDate: 2026-05-09
+tags: ["aws", "cdk", "cloudformation"]
+draft: false
+---
+
+Spent half a day this week debugging a CDK deploy that *kept* failing the
+same way:
+
+```
+SiteDistribution  UPDATE_FAILED
+  "specified SSL certificate doesn't exist, isn't in us-east-1 region,
+   isn't valid, or doesn't include a valid certificate chain."
+```
+
+The cert was real. It was `ISSUED`. It was in `us-east-1`. The chain was
+fine. CloudFormation said `CREATE_COMPLETE`. CloudFront still refused to
+attach it.
+
+The clue was in the events: the `AWS::CertificateManager::Certificate`
+resource transitioned from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE` in
+**32 seconds**, with an info-level message that read
+`Content of DNS Record is: null`. ACM hadn't populated the validation
+record yet, CFN's polling gave up, and the resource was marked done while
+still in `PENDING_VALIDATION`. CloudFront — next in the dependency chain
+— looked up the cert, saw it wasn't actually issued, and rejected it with
+a misleading *"doesn't exist"* error.
+
+This is [aws-cdk#8401](https://github.com/aws/aws-cdk/issues/8401),
+unfixed for years. The CDK workaround is `DnsValidatedCertificate`, which
+uses a Lambda-backed custom resource to poll until the cert is genuinely
+`ISSUED` — but it's deprecated and locked to RSA-2048.
+
+The cleaner answer is a small custom construct that wraps the modern
+`acm.Certificate` (keeping `keyAlgorithm` support) with a `cr.Provider`
+whose `isComplete` handler hits `acm:DescribeCertificate` in a loop:
+
+```ts
+const cert = new acm.Certificate(this, "Certificate", {
+  domainName,
+  validation: acm.CertificateValidation.fromDns(zone),
+  keyAlgorithm: acm.KeyAlgorithm.EC_PRIME256V1,
+});
+
+const waiter = new CertIssuedWaiter(this, "CertWaiter", {
+  certificateArn: cert.certificateArn,
+});
+
+distribution.node.addDependency(waiter);
+```
+
+CloudFront now blocks on the cert being *actually* issued, not on CFN's
+say-so. The site you're reading uses exactly this construct.
+
+The general lesson: when a CloudFormation resource lies about its state,
+the fix is almost always a custom resource that asks the underlying
+service directly. Don't trust the wrapper — ask the source.
