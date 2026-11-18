@@ -51,6 +51,10 @@ jobs:
         working-directory: infra
         run: npm ci
 
+      - name: Check infra types
+        working-directory: infra
+        run: npm run build -- --noEmit
+
       - name: Build site
         run: npm run build
         env:

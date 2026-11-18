@@ -18,7 +18,7 @@
     "@types/node": "^26.6.6",
     "aws-cdk": "^2.1148.1",
     "ts-node": "^10.9.2",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.277.0",
